@@ -28,24 +28,45 @@ sudo sed -i 's/^#\?net.ipv4.ip_forward=.*/net.ipv4.ip_forward=1/' /etc/sysctl.co
 
 echo "[+] Writing WireGuard server config to $SERVER_CONF..."
 
+echo "[+] Input public interface name (e.g., eth0, ens3):"
+read -p "Public Interface: " PUBLIC_IF
+
+# Collect port forwarding rules
+PORT_FORWARD_RULES_POSTUP=()
+PORT_FORWARD_RULES_POSTDOWN=()
+
+while true; do
+    echo "[+] Input public port to forward:"
+    read -p "Port Public: " PORT_PUBLIC
+
+    echo "[+] Input local port (on client):"
+    read -p "Port Local: " PORT_LOCAL
+
+    # Add rules for PostUp and PostDown
+    PORT_FORWARD_RULES_POSTUP+=("iptables -t nat -A PREROUTING -i $PUBLIC_IF -p tcp --dport $PORT_PUBLIC -j DNAT --to-destination $CLIENT_WG_IP:$PORT_LOCAL;")
+    PORT_FORWARD_RULES_POSTDOWN+=("iptables -t nat -D PREROUTING -i $PUBLIC_IF -p tcp --dport $PORT_PUBLIC -j DNAT --to-destination $CLIENT_WG_IP:$PORT_LOCAL;")
+
+    read -p "Tambahkan port lagi? (y/n): " ADD_MORE
+    [[ "$ADD_MORE" =~ ^[Yy]$ ]] || break
+done
+
 cat <<EOF | sudo tee $SERVER_CONF > /dev/null
 [Interface]
 Address = $SERVER_WG_IP/24
 PrivateKey = $PRIVATE_KEY
 ListenPort = 51820
-PostUp = iptables -A FORWARD -i %i -j ACCEPT;\
+PostUp = iptables -A FORWARD -i %i -j ACCEPT; \
          iptables -t nat -A POSTROUTING -o wg0 -j MASQUERADE; \
          iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT; \
-         iptables -t nat -A PREROUTING -i ens3 -p tcp --dport 80 -j DNAT --to-destination $CLIENT_WG_IP:80; \
-         iptables -t nat -A PREROUTING -i ens3 -p tcp --dport 8080 -j DNAT --to-destination $CLIENT_WG_IP:8080; \
-         iptables -t nat -A PREROUTING -i ens3 -p tcp --dport 2222 -j DNAT --to-destination $CLIENT_WG_IP:22;
-         
+         ${PORT_FORWARD_RULES_POSTUP[@]}
 PostDown = iptables -D FORWARD -i %i -j ACCEPT; \
            iptables -t nat -D POSTROUTING -o wg0 -j MASQUERADE; \
            iptables -D INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT; \
-           iptables -t nat -D PREROUTING -i ens3 -p tcp --dport 80 -j DNAT --to-destination $CLIENT_WG_IP:80; \
-           iptables -t nat -D PREROUTING -i ens3 -p tcp --dport 8080 -j DNAT --to-destination $CLIENT_WG_IP:8080; \
-           iptables -t nat -D PREROUTING -i ens3 -p tcp --dport 2222 -j DNAT --to-destination $CLIENT_WG_IP:22;
+           ${PORT_FORWARD_RULES_POSTDOWN[@]}
+[Peer]
+PublicKey = $CLIENT_PUBLIC_KEY
+AllowedIPs = $CLIENT_WG_IP/32
+EOF
 
 [Peer]
 PublicKey = $CLIENT_PUBLIC_KEY
