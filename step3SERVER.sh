@@ -14,6 +14,10 @@ read -p "Client Public Key: " CLIENT_PUBLIC_KEY
 PRIVATE_KEY=$(cat server_private.key)
 SERVER_CONF="/etc/wireguard/wg0.conf"
 
+if systemctl is-active --quiet wg-quick@wg0; then
+    echo "[+] Stopping existing WireGuard interface..."
+    sudo systemctl stop wg-quick@wg0
+fi
 if [ -f "$SERVER_CONF" ]; then
     echo "[+] Existing config found. Deleting $SERVER_CONF..."
     sudo rm -f "$SERVER_CONF"
@@ -32,11 +36,7 @@ SaveConfig = true
 PublicKey = $CLIENT_PUBLIC_KEY
 AllowedIPs = $CLIENT_WG_IP/32
 EOF
-echo "[+] Reloading WireGuard config..."
-if systemctl is-active --quiet wg-quick@wg0; then
-    echo "[+] Stopping existing WireGuard interface..."
-    sudo systemctl stop wg-quick@wg0
-fi
+
 
 echo "[+] Starting and enabling WireGuard..."
 sudo systemctl enable wg-quick@wg0
