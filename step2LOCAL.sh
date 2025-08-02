@@ -27,10 +27,16 @@ ALLOWED_IPS="$IP1.$IP2.$IP3.0/24"
 
 CLIENT_CONF="/etc/wireguard/wg0.conf"
 
+if systemctl is-active --quiet wg-quick@wg0; then
+    echo "[+] Stopping existing WireGuard interface..."
+    sudo systemctl stop wg-quick@wg0
+fi
+
 if [ -f "$SERVER_CONF" ]; then
     echo "[+] Existing config found. Deleting $SERVER_CONF..."
     sudo rm -f "$SERVER_CONF"
 fi
+
 
 echo "[+] Writing client config to $CLIENT_CONF..."
 
@@ -45,12 +51,6 @@ Endpoint = $SERVER_PUBLIC_IP:51820
 AllowedIPs = $ALLOWED_IPS
 PersistentKeepalive = 25
 EOF
-
-echo "[+] Reloading WireGuard config..."
-if systemctl is-active --quiet wg-quick@wg0; then
-    echo "[+] Stopping existing WireGuard interface..."
-    sudo systemctl stop wg-quick@wg0
-fi
 
 echo "[+] Starting and enabling WireGuard..."
 sudo systemctl enable wg-quick@wg0
