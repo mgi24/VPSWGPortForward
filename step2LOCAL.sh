@@ -39,6 +39,12 @@ AllowedIPs = 0.0.0.0/0
 PersistentKeepalive = 25
 EOF
 
+echo "[+] Reloading WireGuard config..."
+if systemctl is-active --quiet wg-quick@wg0; then
+    echo "[+] Stopping existing WireGuard interface..."
+    sudo systemctl stop wg-quick@wg0
+fi
+
 echo "[+] Starting and enabling WireGuard..."
 sudo systemctl enable wg-quick@wg0
 sudo systemctl start wg-quick@wg0
