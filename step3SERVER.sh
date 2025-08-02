@@ -55,11 +55,11 @@ cat <<EOF | sudo tee $SERVER_CONF > /dev/null
 Address = $SERVER_WG_IP/24
 PrivateKey = $PRIVATE_KEY
 ListenPort = 51820
-PostUp = iptables -A FORWARD -i %i -j ACCEPT; \
+PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; \
          iptables -t nat -A POSTROUTING -o wg0 -j MASQUERADE; \
          iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT; \
          ${PORT_FORWARD_RULES_POSTUP[@]}
-PostDown = iptables -D FORWARD -i %i -j ACCEPT; \
+PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; \
            iptables -t nat -D POSTROUTING -o wg0 -j MASQUERADE; \
            iptables -D INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT; \
            ${PORT_FORWARD_RULES_POSTDOWN[@]}
@@ -67,9 +67,6 @@ PostDown = iptables -D FORWARD -i %i -j ACCEPT; \
 PublicKey = $CLIENT_PUBLIC_KEY
 AllowedIPs = $CLIENT_WG_IP/32
 
-[Peer]
-PublicKey = $CLIENT_PUBLIC_KEY
-AllowedIPs = $CLIENT_WG_IP/32
 EOF
 
 
