@@ -24,13 +24,17 @@ CLIENT_PUBLIC_KEY=$(cat client_public.key)
 
 CLIENT_CONF="/etc/wireguard/wg0.conf"
 
+if [ -f "$SERVER_CONF" ]; then
+    echo "[+] Existing config found. Deleting $SERVER_CONF..."
+    sudo rm -f "$SERVER_CONF"
+fi
+
 echo "[+] Writing client config to $CLIENT_CONF..."
 
 cat <<EOF | sudo tee $CLIENT_CONF > /dev/null
 [Interface]
 PrivateKey = $CLIENT_PRIVATE_KEY
 Address = $CLIENT_WG_IP/24
-DNS = 1.1.1.1
 
 [Peer]
 PublicKey = $SERVER_PUBLIC_KEY
