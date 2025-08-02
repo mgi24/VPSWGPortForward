@@ -33,14 +33,14 @@ cat <<EOF | sudo tee $SERVER_CONF > /dev/null
 Address = $SERVER_WG_IP/24
 PrivateKey = $PRIVATE_KEY
 ListenPort = 51820
-PostUp = iptables -A FORWARD -i wg0 -o eth0 -m state --state ESTABLISHED,RELATED -j ACCEPT; \
+PostUp = iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j DNAT --to-destination $CLIENT_WG_IP:8080; \
+         iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 8080 -j DNAT --to-destination $CLIENT_WG_IP:8080; \
+         iptables -A FORWARD -i %i -j ACCEPT;\
          iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT; \
-         iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE; \
-         iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j DNAT --to-destination $CLIENT_WG_IP:8080; \
-         iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 8080 -j DNAT --to-destination $CLIENT_WG_IP:8080
-PostDown = iptables -D FORWARD -i wg0 -o eth0 -m state --state ESTABLISHED,RELATED -j ACCEPT; \
-           iptables -D INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT; \
+         iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+PostDown = iptables -D FORWARD -i %i -j ACCEPT; \
            iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE; \
+           iptables -D INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT; \
            iptables -t nat -D PREROUTING -i eth0 -p tcp --dport 80 -j DNAT --to-destination $CLIENT_WG_IP:8080; \
            iptables -t nat -D PREROUTING -i eth0 -p tcp --dport 8080 -j DNAT --to-destination $CLIENT_WG_IP:8080
 [Peer]
