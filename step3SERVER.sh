@@ -30,7 +30,6 @@ cat <<EOF | sudo tee $SERVER_CONF > /dev/null
 Address = $SERVER_WG_IP/24
 PrivateKey = $PRIVATE_KEY
 ListenPort = 51820
-SaveConfig = true
 
 [Peer]
 PublicKey = $CLIENT_PUBLIC_KEY
