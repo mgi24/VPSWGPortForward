@@ -22,6 +22,9 @@ wg genkey | tee client_private.key | wg pubkey > client_public.key
 CLIENT_PRIVATE_KEY=$(cat client_private.key)
 CLIENT_PUBLIC_KEY=$(cat client_public.key)
 
+IFS='.' read -r IP1 IP2 IP3 IP4 <<< "$CLIENT_WG_IP"
+ALLOWED_IPS="$IP1.$IP2.$IP3.0/24"
+
 CLIENT_CONF="/etc/wireguard/wg0.conf"
 
 if [ -f "$SERVER_CONF" ]; then
@@ -39,7 +42,7 @@ Address = $CLIENT_WG_IP/24
 [Peer]
 PublicKey = $SERVER_PUBLIC_KEY
 Endpoint = $SERVER_PUBLIC_IP:51820
-AllowedIPs = 0.0.0.0/0
+AllowedIPs = $ALLOWED_IPS
 PersistentKeepalive = 25
 EOF
 
