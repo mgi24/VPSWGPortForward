@@ -66,7 +66,6 @@ PostDown = iptables -D FORWARD -i %i -j ACCEPT; \
 [Peer]
 PublicKey = $CLIENT_PUBLIC_KEY
 AllowedIPs = $CLIENT_WG_IP/32
-EOF
 
 [Peer]
 PublicKey = $CLIENT_PUBLIC_KEY
